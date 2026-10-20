@@ -1,75 +1,83 @@
+
 const formulario = document.getElementById("formularioReserva");
 
+// Inicializar EmailJS
+emailjs.init({
+    publicKey: "TU_PUBLIC_KEY"
+});
 
-formulario.addEventListener("submit", function(event) {
+formulario.addEventListener("submit", async function(event) {
 
     event.preventDefault();
 
+    const nombre = document.getElementById("nombre").value;
+    const correo = document.getElementById("correo").value;
+    const entrada = document.getElementById("entrada").value;
+    const salida = document.getElementById("salida").value;
+    const huespedes = document.getElementById("huespedes").value;
 
-    const nombre =
-        document.getElementById("nombre").value;
+    const selector = document.getElementById("habitacion");
+    const precio = Number(selector.value);
+    const habitacion = selector.options[selector.selectedIndex].text;
 
-    const entrada =
-        document.getElementById("entrada").value;
+    // Validar fechas
+    const fechaEntrada = new Date(entrada + "T00:00:00");
+    const fechaSalida = new Date(salida + "T00:00:00");
 
-    const salida =
-        document.getElementById("salida").value;
+    const diferencia = fechaSalida - fechaEntrada;
+    const noches = diferencia / (1000 * 60 * 60 * 24);
 
-    const huespedes =
-        document.getElementById("huespedes").value;
-
-    const precio =
-        Number(document.getElementById("habitacion").value);
-
-
-    if (salida <= entrada) {
-
-        alert(
-            "La fecha de salida debe ser posterior a la fecha de entrada."
-        );
-
+    if (noches <= 0) {
+        alert("La salida debe ser posterior a la entrada.");
         return;
     }
 
+    const total = noches * precio;
 
-    const fechaEntrada =
-        new Date(entrada);
+    const parametros = {
+        nombre: nombre,
+        correo: correo,
+        entrada: entrada,
+        salida: salida,
+        huespedes: huespedes,
+        habitacion: habitacion,
+        noches: noches,
+        total: total
+    };
 
-    const fechaSalida =
-        new Date(salida);
+    try {
 
+        const boton = formulario.querySelector("button");
+        boton.disabled = true;
+        boton.textContent = "ENVIANDO SOLICITUD...";
 
-    const diferencia =
-        fechaSalida - fechaEntrada;
-
-
-    const noches =
-        Math.ceil(
-            diferencia /
-            (1000 * 60 * 60 * 24)
+        await emailjs.send(
+            "TU_SERVICE_ID",
+            "TU_TEMPLATE_ID",
+            parametros
         );
 
+        alert(
+            "Tu solicitud fue enviada correctamente.\n\n" +
+            "Recibirás una respuesta en tu correo: " + correo +
+            "\n\nTu habitación todavía no está confirmada."
+        );
 
-    const total =
-        noches * precio;
+        formulario.reset();
 
+    } catch (error) {
 
-    alert(
+        console.error("Error al enviar:", error);
 
-        "🏨 HOTEL ZELDA\n\n" +
+        alert("No se pudo enviar la solicitud. Intenta nuevamente.");
 
-        "Huésped: " + nombre + "\n" +
+    } finally {
 
-        "Entrada: " + entrada + "\n" +
+        const boton = formulario.querySelector("button");
+        boton.disabled = false;
+        boton.textContent = "SOLICITAR RESERVA";
 
-        "Salida: " + salida + "\n" +
-
-        "Huéspedes: " + huespedes + "\n" +
-
-        "Noches: " + noches + "\n" +
-
-        "Total: $" + total
-
-    );
+    }
 
 });
+
